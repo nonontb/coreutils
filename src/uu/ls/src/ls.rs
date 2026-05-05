@@ -779,6 +779,7 @@ pub fn uu_app() -> Command {
     // Positional arguments
     .arg(
         Arg::new(options::PATHS)
+            .hide(true)
             .action(ArgAction::Append)
             .value_hint(clap::ValueHint::AnyPath)
             .value_parser(ValueParser::os_string()),
@@ -1480,7 +1481,12 @@ fn sort_entries(entries: &mut [PathData], config: &Config) {
             )
         }),
         Sort::Size => {
-            entries.sort_unstable_by_key(|k| Reverse(k.metadata().map_or(0, Metadata::len)));
+            entries.sort_unstable_by(|a, b| {
+                b.metadata()
+                    .map_or(0, Metadata::len)
+                    .cmp(&a.metadata().map_or(0, Metadata::len))
+                    .then(a.file_name().cmp(b.file_name()))
+            });
         }
         // The default sort in GNU ls is case insensitive
         Sort::Name => entries.sort_unstable_by(|a, b| a.display_name().cmp(b.display_name())),
@@ -1511,7 +1517,7 @@ fn sort_entries(entries: &mut [PathData], config: &Config) {
     }
 
     if config.group_directories_first && config.sort != Sort::None {
-        entries.sort_unstable_by_key(|p| {
+        entries.sort_by_key(|p| {
             let ft = {
                 // We will always try to deref symlinks to group directories, so PathData.md
                 // is not always useful.
