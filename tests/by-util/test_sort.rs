@@ -1613,8 +1613,7 @@ fn test_merge_empty_input() {
     new_ucmd!()
         .args(&["-m", "empty.txt"])
         .succeeds()
-        .no_stderr()
-        .no_stdout();
+        .no_output();
 }
 
 #[test]
